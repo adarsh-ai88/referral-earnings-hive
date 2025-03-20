@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -32,16 +33,29 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [retryCount, setRetryCount] = useState(0);
   const [localLoading, setLocalLoading] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
-    console.log('Dashboard auth state:', { isAuthenticated, user, isLoading, userStats });
+    console.log('Dashboard auth state:', { isAuthenticated, user, isLoading, userStats, hasInitialized });
     
-    if (!isAuthenticated && !isLoading) {
+    if (!isAuthenticated && !isLoading && hasInitialized) {
       console.log('Not authenticated, redirecting to login');
       navigate('/login');
     }
-  }, [isAuthenticated, isLoading, navigate]);
+    
+    if (!hasInitialized && !isLoading) {
+      setHasInitialized(true);
+    }
+  }, [isAuthenticated, isLoading, navigate, hasInitialized, userStats]);
+
+  // Add automatic retry once on initial load if user exists but no profile data
+  useEffect(() => {
+    if (hasInitialized && isAuthenticated && !user && !isLoading && retryCount === 0) {
+      console.log('Automatically retrying to load user profile');
+      handleRefreshProfile();
+    }
+  }, [hasInitialized, isAuthenticated, user, isLoading, retryCount]);
 
   // Handle retry for profile refresh
   const handleRefreshProfile = async () => {
@@ -61,7 +75,7 @@ const Dashboard = () => {
   };
 
   // Show loading state while waiting for user data
-  if (isLoading || localLoading) {
+  if (isLoading || localLoading || (!hasInitialized && isAuthenticated)) {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-8 min-h-[80vh] flex flex-col items-center justify-center">
@@ -73,7 +87,7 @@ const Dashboard = () => {
   }
 
   // If user is authenticated but data is still not available
-  if (!user || !userStats) {
+  if (isAuthenticated && (!user || !userStats)) {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-8 min-h-[80vh] flex flex-col items-center justify-center">
