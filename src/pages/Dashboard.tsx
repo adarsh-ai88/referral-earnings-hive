@@ -50,14 +50,16 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold animate-slideUp">Dashboard</h1>
-            <p className="text-muted-foreground animate-slideUp">
+            <h1 className="text-3xl font-bold animate-slideUp bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-gray-400 animate-slideUp">
               Welcome back, {user.name}
             </p>
           </div>
           <Button 
             onClick={() => navigate('/referrals')}
-            className="mt-4 md:mt-0 bg-mlm-primary hover:bg-mlm-accent animate-slideUp"
+            className="mt-4 md:mt-0 bg-gradient-to-r from-blue-500 to-purple-500 hover:opacity-90 transition-opacity animate-slideUp"
           >
             View My Referral Network
             <ChevronRight className="ml-2 h-4 w-4" />
@@ -68,44 +70,44 @@ const Dashboard = () => {
           <StatsCard
             title="Total Earnings"
             value={`$${userStats.totalEarnings.toFixed(2)}`}
-            icon={<DollarSign className="h-5 w-5" />}
+            icon={<DollarSign className="h-5 w-5 text-blue-500" />}
             trend={userStats.totalEarnings > 0 ? "up" : "neutral"}
             trendValue="From Commissions"
           />
           <StatsCard
             title="Direct Referrals"
             value={userStats.directReferrals}
-            icon={<Users className="h-5 w-5" />}
+            icon={<Users className="h-5 w-5 text-purple-500" />}
             description="First-level referrals"
           />
           <StatsCard
             title="Indirect Referrals"
             value={userStats.indirectReferrals}
-            icon={<Share2 className="h-5 w-5" />}
+            icon={<Share2 className="h-5 w-5 text-blue-500" />}
             description="From your network"
           />
           <StatsCard
             title="Pending Commissions"
             value={`$${userStats.pendingCommissions.toFixed(2)}`}
-            icon={<Clock className="h-5 w-5" />}
+            icon={<Clock className="h-5 w-5 text-purple-500" />}
             description="Will be processed soon"
           />
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3 h-auto p-1">
-            <TabsTrigger value="overview" className="py-2">Overview</TabsTrigger>
-            <TabsTrigger value="transactions" className="py-2">Transactions</TabsTrigger>
-            <TabsTrigger value="referral" className="py-2">Referral Program</TabsTrigger>
+          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3 h-auto p-1 bg-black/40 backdrop-blur-xl border border-white/10 rounded-md">
+            <TabsTrigger value="overview" className="py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-white">Overview</TabsTrigger>
+            <TabsTrigger value="transactions" className="py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-white">Transactions</TabsTrigger>
+            <TabsTrigger value="referral" className="py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-white">Referral Program</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                <Card className="backdrop-blur-md animate-fadeIn">
+                <Card className="bg-black/40 backdrop-blur-xl border border-white/10 animate-fadeIn">
                   <CardHeader>
-                    <CardTitle>Recent Transactions</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Recent Transactions</CardTitle>
+                    <CardDescription className="text-gray-400">
                       Your most recent earnings and purchases
                     </CardDescription>
                   </CardHeader>
@@ -116,7 +118,7 @@ const Dashboard = () => {
                         <Button 
                           variant="link" 
                           onClick={() => handleTabClick("transactions")}
-                          className="text-mlm-primary hover:text-mlm-accent"
+                          className="text-blue-500 hover:text-purple-500"
                         >
                           View all transactions
                           <ChevronRight className="ml-1 h-4 w-4" />
@@ -126,16 +128,16 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="backdrop-blur-md animate-fadeIn">
+                <Card className="bg-black/40 backdrop-blur-xl border border-white/10 animate-fadeIn">
                   <CardHeader>
-                    <CardTitle>Performance Overview</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Performance Overview</CardTitle>
+                    <CardDescription className="text-gray-400">
                       Your referral network growth and earnings
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex justify-center">
-                    <div className="text-center py-6 text-muted-foreground">
-                      <TrendingUp className="mx-auto h-16 w-16 mb-4 text-mlm-primary opacity-60" />
+                    <div className="text-center py-6 text-gray-400">
+                      <TrendingUp className="mx-auto h-16 w-16 mb-4 text-blue-500 opacity-60" />
                       <p>Performance metrics and charts will appear here as your network grows.</p>
                     </div>
                   </CardContent>
@@ -145,33 +147,33 @@ const Dashboard = () => {
               <div className="space-y-6">
                 <ReferralCodeCard />
                 
-                <Card className="backdrop-blur-md animate-fadeIn">
+                <Card className="bg-black/40 backdrop-blur-xl border border-white/10 animate-fadeIn">
                   <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
+                    <CardTitle className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <Button 
-                      className="w-full justify-start"
+                      className="w-full justify-start bg-black/60 border border-white/10 hover:border-blue-500/50 transition-colors"
                       variant="outline"
                       onClick={() => navigate('/referrals')}
                     >
-                      <Users className="mr-2 h-4 w-4" />
+                      <Users className="mr-2 h-4 w-4 text-purple-500" />
                       View My Referral Network
                     </Button>
                     <Button 
-                      className="w-full justify-start"
+                      className="w-full justify-start bg-black/60 border border-white/10 hover:border-blue-500/50 transition-colors"
                       variant="outline"
                       onClick={() => copyReferralLink(user.referralCode)}
                     >
-                      <Copy className="mr-2 h-4 w-4" />
+                      <Copy className="mr-2 h-4 w-4 text-blue-500" />
                       Copy Referral Link
                     </Button>
                     <Button 
-                      className="w-full justify-start"
+                      className="w-full justify-start bg-black/60 border border-white/10 hover:border-blue-500/50 transition-colors"
                       variant="outline"
                       onClick={() => handleTabClick("transactions")}
                     >
-                      <DollarSign className="mr-2 h-4 w-4" />
+                      <DollarSign className="mr-2 h-4 w-4 text-purple-500" />
                       View All Transactions
                     </Button>
                   </CardContent>
@@ -181,10 +183,10 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="transactions">
-            <Card className="backdrop-blur-md animate-fadeIn">
+            <Card className="bg-black/40 backdrop-blur-xl border border-white/10 animate-fadeIn">
               <CardHeader>
-                <CardTitle>Transaction History</CardTitle>
-                <CardDescription>
+                <CardTitle className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Transaction History</CardTitle>
+                <CardDescription className="text-gray-400">
                   All your earnings and purchases
                 </CardDescription>
               </CardHeader>
@@ -197,10 +199,10 @@ const Dashboard = () => {
           <TabsContent value="referral">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
-                <Card className="backdrop-blur-md animate-fadeIn">
+                <Card className="bg-black/40 backdrop-blur-xl border border-white/10 animate-fadeIn">
                   <CardHeader>
-                    <CardTitle>Commission Structure</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Commission Structure</CardTitle>
+                    <CardDescription className="text-gray-400">
                       How earnings are distributed in our MLM program
                     </CardDescription>
                   </CardHeader>

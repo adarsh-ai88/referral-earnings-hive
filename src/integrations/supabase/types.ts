@@ -9,72 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      commission_levels: {
-        Row: {
-          amount: number
-          created_at: string | null
-          level: number
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          level: number
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          level?: number
-        }
-        Relationships: []
-      }
-      commissions: {
-        Row: {
-          amount: number
-          created_at: string | null
-          from_user_id: string
-          id: string
-          level: number
-          paid_at: string | null
-          status: string | null
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          from_user_id: string
-          id?: string
-          level: number
-          paid_at?: string | null
-          status?: string | null
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          from_user_id?: string
-          id?: string
-          level?: number
-          paid_at?: string | null
-          status?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "commissions_from_user_id_fkey"
-            columns: ["from_user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "commissions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       licenses: {
         Row: {
           created_at: string | null
@@ -95,45 +29,6 @@ export type Database = {
           key?: string
         }
         Relationships: []
-      }
-      referral_tree: {
-        Row: {
-          created_at: string | null
-          id: string
-          level: number
-          referrer_id: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          level: number
-          referrer_id?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          level?: number
-          referrer_id?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "referral_tree_referrer_id_fkey"
-            columns: ["referrer_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "referral_tree_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       trading_signals: {
         Row: {
@@ -176,9 +71,6 @@ export type Database = {
           expires_at: string | null
           id: string
           phone_number: string | null
-          referral_code: string | null
-          subscription_price: number | null
-          total_earnings: number | null
         }
         Insert: {
           created_at?: string | null
@@ -187,9 +79,6 @@ export type Database = {
           expires_at?: string | null
           id?: string
           phone_number?: string | null
-          referral_code?: string | null
-          subscription_price?: number | null
-          total_earnings?: number | null
         }
         Update: {
           created_at?: string | null
@@ -198,9 +87,6 @@ export type Database = {
           expires_at?: string | null
           id?: string
           phone_number?: string | null
-          referral_code?: string | null
-          subscription_price?: number | null
-          total_earnings?: number | null
         }
         Relationships: []
       }
