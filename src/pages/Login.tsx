@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
+import { useToast } from '@/components/ui/use-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -21,6 +22,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -40,6 +42,37 @@ const Login = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAdminCreate = async () => {
+    try {
+      const response = await fetch('/api/create_admin');
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "Admin Created/Updated",
+          description: `${data.message}. Use email: ${data.adminEmail} and password: ${data.adminPassword}`,
+        });
+        
+        // Fill in the fields
+        setEmail(data.adminEmail);
+        setPassword(data.adminPassword);
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to create admin user",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Admin creation error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to connect to the admin creation service",
+        variant: "destructive",
+      });
     }
   };
 
@@ -102,32 +135,17 @@ const Login = () => {
                 </div>
               </form>
 
-              <div className="mt-4 text-center text-sm">
-                <span className="text-muted-foreground">Demo accounts:</span>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => {
-                      setEmail('admin@example.com');
-                      setPassword('admin@example.com');
-                    }}
-                  >
-                    Admin
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => {
-                      setEmail('user@example.com');
-                      setPassword('user@example.com');
-                    }}
-                  >
-                    User
-                  </Button>
-                </div>
+              <div className="mt-4 text-center">
+                <Button 
+                  variant="outline" 
+                  onClick={handleAdminCreate}
+                  className="w-full mt-2"
+                >
+                  Create/Update Admin User
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Click the button above to create an admin user and get login details
+                </p>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
