@@ -25,9 +25,16 @@ const Register = () => {
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const { registerUser } = useMLM();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   // Extract referral code from URL if present
   useEffect(() => {

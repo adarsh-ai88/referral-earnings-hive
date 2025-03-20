@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      commissions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          level: number
+          purchase_id: string
+          referral_user_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          level: number
+          purchase_id: string
+          referral_user_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          level?: number
+          purchase_id?: string
+          referral_user_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       licenses: {
         Row: {
           created_at: string | null
@@ -27,6 +68,39 @@ export type Database = {
           expires_at?: string
           is_active?: boolean | null
           key?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          email: string
+          id: string
+          is_admin: boolean
+          level: number
+          name: string
+          referral_code: string
+          referred_by: string | null
+          registered_at: string
+        }
+        Insert: {
+          email: string
+          id: string
+          is_admin?: boolean
+          level?: number
+          name: string
+          referral_code: string
+          referred_by?: string | null
+          registered_at?: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          is_admin?: boolean
+          level?: number
+          name?: string
+          referral_code?: string
+          referred_by?: string | null
+          registered_at?: string
         }
         Relationships: []
       }
@@ -63,6 +137,36 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          reference_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          reference_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          reference_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
@@ -95,7 +199,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      process_mlm_commissions: {
+        Args: {
+          purchaser_id: string
+          purchase_id: string
+          purchase_amount: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

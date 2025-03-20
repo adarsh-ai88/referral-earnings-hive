@@ -7,17 +7,10 @@ import {
   UserStats, 
   ReferralTreeNode 
 } from '@/lib/types';
-import { 
-  mockUsers, 
-  mockTransactions, 
-  mockCommissions, 
-  buildReferralTree,
-  getUserStats,
-  registerUser as mockRegisterUser
-} from '@/lib/mock-data';
+import { generateReferralCode } from '@/lib/mlm-config';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { generateReferralCode } from '@/lib/mlm-config';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MLMContextType {
   users: User[];
@@ -33,24 +26,173 @@ interface MLMContextType {
 const MLMContext = createContext<MLMContextType | undefined>(undefined);
 
 export function MLMProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
-  const [commissions, setCommissions] = useState<Commission[]>(mockCommissions);
-  const [referralTree, setReferralTree] = useState<ReferralTreeNode[]>(buildReferralTree());
+  const [users, setUsers] = useState<User[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [referralTree, setReferralTree] = useState<ReferralTreeNode[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+
+  // Load all users for admin view and referral tree
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!isAuthenticated) return;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching users:', error);
+        return;
+      }
+      
+      if (data) {
+        const formattedUsers: User[] = data.map(profile => ({
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          referralCode: profile.referral_code,
+          referredBy: profile.referred_by,
+          level: profile.level,
+          registeredAt: new Date(profile.registered_at),
+          isAdmin: profile.is_admin
+        }));
+        
+        setUsers(formattedUsers);
+        
+        // Build referral tree
+        const tree = buildReferralTree(formattedUsers);
+        setReferralTree(tree);
+      }
+    };
+    
+    fetchUsers();
+  }, [isAuthenticated]);
+
+  // Load transactions and commissions
+  useEffect(() => {
+    const fetchTransactionsAndCommissions = async () => {
+      if (!isAuthenticated || !user) return;
+
+      // Fetch transactions
+      const { data: transData, error: transError } = await supabase
+        .from('transactions')
+        .select('*');
+      
+      if (transError) {
+        console.error('Error fetching transactions:', transError);
+      } else if (transData) {
+        const formattedTransactions: Transaction[] = transData.map(trans => ({
+          id: trans.id,
+          userId: trans.user_id,
+          amount: Number(trans.amount),
+          type: trans.type as 'purchase' | 'commission',
+          description: trans.description,
+          createdAt: new Date(trans.created_at),
+          referenceId: trans.reference_id
+        }));
+        
+        setTransactions(formattedTransactions);
+      }
+
+      // Fetch commissions
+      const { data: commData, error: commError } = await supabase
+        .from('commissions')
+        .select('*');
+      
+      if (commError) {
+        console.error('Error fetching commissions:', commError);
+      } else if (commData) {
+        const formattedCommissions: Commission[] = commData.map(comm => ({
+          id: comm.id,
+          userId: comm.user_id,
+          referralUserId: comm.referral_user_id,
+          purchaseId: comm.purchase_id,
+          amount: Number(comm.amount),
+          level: comm.level,
+          createdAt: new Date(comm.created_at),
+          status: comm.status as 'pending' | 'paid'
+        }));
+        
+        setCommissions(formattedCommissions);
+      }
+    };
+    
+    fetchTransactionsAndCommissions();
+  }, [isAuthenticated, user]);
 
   // Update user stats when user changes
   useEffect(() => {
-    if (user) {
-      const stats = getUserStats(user.id);
+    if (user && transactions.length > 0) {
+      const stats = calculateUserStats(user.id, transactions, users);
       setUserStats(stats);
     } else {
       setUserStats(null);
     }
-  }, [user, transactions]);
+  }, [user, transactions, users]);
+
+  // Build referral tree helper function
+  const buildReferralTree = (users: User[]): ReferralTreeNode[] => {
+    const userMap = new Map<string, User>();
+    const tree: ReferralTreeNode[] = [];
+    const nodeMap = new Map<string, ReferralTreeNode>();
+
+    // First, create a map of all users
+    users.forEach(user => {
+      userMap.set(user.id, user);
+      nodeMap.set(user.id, { user, children: [] });
+    });
+
+    // Then build the tree structure
+    users.forEach(user => {
+      const node = nodeMap.get(user.id)!;
+      if (user.referredBy) {
+        const parentNode = nodeMap.get(user.referredBy);
+        if (parentNode) {
+          parentNode.children.push(node);
+        }
+      } else {
+        tree.push(node);
+      }
+    });
+
+    return tree;
+  };
+
+  // Calculate user stats
+  const calculateUserStats = (userId: string, transactions: Transaction[], users: User[]): UserStats => {
+    const userTransactions = transactions.filter(t => t.userId === userId);
+    const totalEarnings = userTransactions
+      .filter(t => t.type === "commission")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const directReferrals = users.filter(u => u.referredBy === userId).length;
+    
+    const indirectReferrals = users.filter(u => {
+      if (!u.referredBy) return false;
+      const directReferer = users.find(du => du.id === u.referredBy);
+      return directReferer && directReferer.referredBy === userId;
+    }).length;
+
+    const pendingCommissions = commissions
+      .filter(c => c.userId === userId && c.status === "pending")
+      .reduce((sum, c) => sum + c.amount, 0);
+
+    const lastTransactions = userTransactions
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 5);
+
+    return {
+      totalEarnings,
+      directReferrals,
+      indirectReferrals,
+      pendingCommissions,
+      lastTransactions
+    };
+  };
 
   // Register a new user
   const registerUser = async (name: string, email: string, referralCode?: string) => {
@@ -63,25 +205,92 @@ export function MLMProvider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    // Check if email already exists
-    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-      toast({
-        title: "Registration Error",
-        description: "This email is already registered",
-        variant: "destructive",
-      });
-      return null;
+    // Get the referrer's ID from the referral code
+    let referrerId: string | null = null;
+    if (referralCode) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('referral_code', referralCode)
+        .single();
+      
+      if (error) {
+        console.error('Error finding referrer:', error);
+      } else if (data) {
+        referrerId = data.id;
+      }
     }
 
-    // Register the user
     try {
-      const newUser = mockRegisterUser(name, email, referralCode);
+      // Register the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password: email, // Using email as password for demo simplicity - in production use proper password
+        options: {
+          data: {
+            name,
+            referredBy: referrerId
+          }
+        }
+      });
       
-      // Update state
+      if (authError) {
+        toast({
+          title: "Registration Error",
+          description: authError.message,
+          variant: "destructive",
+        });
+        return null;
+      }
+      
+      if (!authData.user) {
+        toast({
+          title: "Registration Error",
+          description: "Failed to create user",
+          variant: "destructive",
+        });
+        return null;
+      }
+      
+      // Wait for the profile to be created by the database trigger
+      // In a real app, you might want to implement a more robust solution
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Fetch the newly created profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+      
+      if (profileError || !profileData) {
+        toast({
+          title: "Registration Error",
+          description: "Failed to retrieve user profile",
+          variant: "destructive",
+        });
+        return null;
+      }
+      
+      // Process the initial purchase
+      await processPurchase(authData.user.id, 150);
+      
+      const newUser: User = {
+        id: profileData.id,
+        name: profileData.name,
+        email: profileData.email,
+        referralCode: profileData.referral_code,
+        referredBy: profileData.referred_by,
+        level: profileData.level,
+        registeredAt: new Date(profileData.registered_at),
+        isAdmin: profileData.is_admin
+      };
+      
+      // Update the users list
       setUsers(prev => [...prev, newUser]);
       
       // Rebuild referral tree
-      setReferralTree(buildReferralTree());
+      setReferralTree(buildReferralTree([...users, newUser]));
       
       toast({
         title: "Registration Successful",
@@ -90,9 +299,10 @@ export function MLMProvider({ children }: { children: ReactNode }) {
       
       return newUser;
     } catch (error) {
+      console.error('Registration error:', error);
       toast({
         title: "Registration Error",
-        description: "An error occurred during registration",
+        description: "An unexpected error occurred during registration",
         variant: "destructive",
       });
       return null;
@@ -113,83 +323,84 @@ export function MLMProvider({ children }: { children: ReactNode }) {
   // Process a purchase
   const processPurchase = async (userId: string, amount: number) => {
     try {
-      // Create purchase transaction
-      const purchaseId = `trans${transactions.length + 1}`;
-      const purchase: Transaction = {
-        id: purchaseId,
-        userId,
-        amount,
-        type: "purchase",
-        description: "Trading Bot Purchase",
-        createdAt: new Date()
-      };
+      // Create purchase transaction in Supabase
+      const { data: transactionData, error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: userId,
+          amount,
+          type: 'purchase',
+          description: 'Trading Bot Purchase'
+        })
+        .select()
+        .single();
       
-      setTransactions(prev => [...prev, purchase]);
-      
-      // Find the user who made the purchase
-      const purchaser = users.find(u => u.id === userId);
-      if (purchaser && purchaser.referredBy) {
-        // Process MLM commissions
-        let currentReferrerId = purchaser.referredBy;
-        let currentLevel = 1;
-        
-        const visited = new Set<string>();
-        
-        while (currentReferrerId && currentLevel <= 10 && !visited.has(currentReferrerId)) {
-          visited.add(currentReferrerId);
-          
-          const referrer = users.find(u => u.id === currentReferrerId);
-          if (!referrer) break;
-          
-          const levelConfig = { level: currentLevel, commission: 0 };
-          
-          switch(currentLevel) {
-            case 1: levelConfig.commission = 10; break;
-            case 2: levelConfig.commission = 6; break;
-            case 3: levelConfig.commission = 4; break;
-            case 4: levelConfig.commission = 3; break;
-            case 5: levelConfig.commission = 2; break;
-            case 6: levelConfig.commission = 2; break;
-            case 7: levelConfig.commission = 3; break;
-            case 8: levelConfig.commission = 4; break;
-            case 9: levelConfig.commission = 6; break;
-            case 10: levelConfig.commission = 10; break;
-            default: levelConfig.commission = 0;
-          }
-          
-          if (levelConfig.commission > 0) {
-            // Create a commission record
-            const commission: Commission = {
-              id: `comm${commissions.length + 1}`,
-              userId: currentReferrerId,
-              referralUserId: userId,
-              purchaseId,
-              amount: levelConfig.commission,
-              level: currentLevel,
-              createdAt: new Date(),
-              status: "pending"
-            };
-            
-            setCommissions(prev => [...prev, commission]);
-            
-            // Create a transaction for this commission
-            const transaction: Transaction = {
-              id: `trans${transactions.length + 1 + currentLevel}`,
-              userId: currentReferrerId,
-              amount: levelConfig.commission,
-              type: "commission",
-              description: `Level ${currentLevel} Commission from purchase`,
-              createdAt: new Date(),
-              referenceId: purchaseId
-            };
-            
-            setTransactions(prev => [...prev, transaction]);
-          }
-          
-          // Move up the referral chain
-          currentReferrerId = referrer.referredBy || "";
-          currentLevel++;
+      if (transactionError) {
+        console.error('Error creating purchase transaction:', transactionError);
+        toast({
+          title: "Purchase Error",
+          description: "An error occurred during purchase",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Call the database function to process MLM commissions
+      const { error: rpcError } = await supabase.rpc(
+        'process_mlm_commissions',
+        {
+          purchaser_id: userId,
+          purchase_id: transactionData.id,
+          purchase_amount: amount
         }
+      );
+      
+      if (rpcError) {
+        console.error('Error processing commissions:', rpcError);
+        toast({
+          title: "Commission Processing Error",
+          description: "An error occurred while processing commissions",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Refresh transactions and commissions
+      const { data: newTransactions, error: newTransError } = await supabase
+        .from('transactions')
+        .select('*');
+        
+      if (!newTransError && newTransactions) {
+        const formattedTransactions: Transaction[] = newTransactions.map(trans => ({
+          id: trans.id,
+          userId: trans.user_id,
+          amount: Number(trans.amount),
+          type: trans.type as 'purchase' | 'commission',
+          description: trans.description,
+          createdAt: new Date(trans.created_at),
+          referenceId: trans.reference_id
+        }));
+        
+        setTransactions(formattedTransactions);
+      }
+      
+      const { data: newCommissions, error: newCommError } = await supabase
+        .from('commissions')
+        .select('*');
+        
+      if (!newCommError && newCommissions) {
+        const formattedCommissions: Commission[] = newCommissions.map(comm => ({
+          id: comm.id,
+          userId: comm.user_id,
+          referralUserId: comm.referral_user_id,
+          purchaseId: comm.purchase_id,
+          amount: Number(comm.amount),
+          level: comm.level,
+          createdAt: new Date(comm.created_at),
+          status: comm.status as 'pending' | 'paid'
+        }));
+        
+        setCommissions(formattedCommissions);
       }
       
       toast({
@@ -199,9 +410,10 @@ export function MLMProvider({ children }: { children: ReactNode }) {
       
       return true;
     } catch (error) {
+      console.error('Purchase error:', error);
       toast({
         title: "Purchase Error",
-        description: "An error occurred during purchase",
+        description: "An unexpected error occurred during purchase",
         variant: "destructive",
       });
       return false;

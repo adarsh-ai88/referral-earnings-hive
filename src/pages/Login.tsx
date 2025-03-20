@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Card, 
@@ -19,8 +19,15 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +111,7 @@ const Login = () => {
                     className="text-xs"
                     onClick={() => {
                       setEmail('admin@example.com');
-                      setPassword('password');
+                      setPassword('admin@example.com');
                     }}
                   >
                     Admin
@@ -114,8 +121,8 @@ const Login = () => {
                     size="sm"
                     className="text-xs"
                     onClick={() => {
-                      setEmail('alice@example.com');
-                      setPassword('password');
+                      setEmail('user@example.com');
+                      setPassword('user@example.com');
                     }}
                   >
                     User

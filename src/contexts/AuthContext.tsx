@@ -1,8 +1,9 @@
 
 import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { User } from '@/lib/types';
-import { mockUsers, loginUser as mockLoginUser } from '@/lib/mock-data';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -16,55 +17,137 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const { toast } = useToast();
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!session;
   const isAdmin = !!user?.isAdmin;
 
-  // Check for saved login on mount
+  // Set up auth state listener and check for existing session
   useEffect(() => {
-    const savedUserId = localStorage.getItem('mlm_user_id');
-    if (savedUserId) {
-      const user = mockUsers.find(u => u.id === savedUserId);
-      if (user) {
-        setUser(user);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        
+        if (session?.user) {
+          // Fetch user profile data
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (error) {
+            console.error('Error fetching user profile:', error);
+            return;
+          }
+          
+          if (data) {
+            setUser({
+              id: data.id,
+              name: data.name,
+              email: data.email,
+              referralCode: data.referral_code,
+              referredBy: data.referred_by,
+              level: data.level,
+              registeredAt: new Date(data.registered_at),
+              isAdmin: data.is_admin
+            });
+          }
+        } else {
+          setUser(null);
+        }
       }
-    }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      
+      if (session?.user) {
+        // Fetch user profile data
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          return;
+        }
+        
+        if (data) {
+          setUser({
+            id: data.id,
+            name: data.name,
+            email: data.email,
+            referralCode: data.referral_code,
+            referredBy: data.referred_by,
+            level: data.level,
+            registeredAt: new Date(data.registered_at),
+            isAdmin: data.is_admin
+          });
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
-    // In a real app, you would validate credentials against a backend
-    // For this prototype, we'll just find a user with the matching email
-    const foundUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (foundUser) {
-      // Mock login - in real app you'd verify password
-      const loggedInUser = mockLoginUser(foundUser.id);
-      if (loggedInUser) {
-        setUser(loggedInUser);
-        localStorage.setItem('mlm_user_id', loggedInUser.id);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      if (data.user) {
         toast({
           title: "Login Successful",
-          description: `Welcome back, ${loggedInUser.name}!`,
+          description: `Welcome back!`,
         });
         return true;
       }
+      
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+      return false;
     }
-    
-    toast({
-      title: "Login Failed",
-      description: "Invalid email or password",
-      variant: "destructive",
-    });
-    return false;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('mlm_user_id');
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out",
-    });
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out",
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout Failed",
+        description: "An error occurred during logout",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
