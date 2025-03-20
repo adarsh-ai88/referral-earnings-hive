@@ -16,25 +16,26 @@ import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
 import { useToast } from '@/components/ui/use-toast';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login, isAuthenticated, isAdmin, isLoading } = useAuth();
+  const [formLoading, setFormLoading] = useState(false);
+  const { login, isAuthenticated, isAdmin, isLoading, hasInitialized } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
+    if (hasInitialized && isAuthenticated && !isLoading) {
       if (isAdmin) {
         navigate('/admin');
       } else {
         navigate('/dashboard');
       }
     }
-  }, [isAuthenticated, isAdmin, navigate, isLoading]);
+  }, [isAuthenticated, isAdmin, navigate, isLoading, hasInitialized]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,11 +49,11 @@ const Login = () => {
       return;
     }
     
-    setLoading(true);
+    setFormLoading(true);
     
     try {
-      // Regular login flow
       const success = await login(email, password);
+      
       if (success) {
         // The useEffect will handle redirects based on user role
         toast({
@@ -68,9 +69,13 @@ const Login = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
+
+  if (!hasInitialized) {
+    return <LoadingSpinner fullScreen text="Initializing application..." />;
+  }
 
   return (
     <AppLayout>
@@ -130,9 +135,9 @@ const Login = () => {
                     <Button 
                       type="submit" 
                       className="w-full bg-mlm-primary hover:bg-mlm-accent"
-                      disabled={loading}
+                      disabled={formLoading}
                     >
-                      {loading ? (
+                      {formLoading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Logging in...

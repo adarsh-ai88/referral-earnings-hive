@@ -12,21 +12,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMLM } from '@/contexts/MLMContext';
 import AppLayout from '@/components/layout/AppLayout';
+import { useToast } from '@/components/ui/use-toast';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading, hasInitialized } = useAuth();
   const { registerUser } = useMLM();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Check for referral code in URL
   useEffect(() => {
@@ -38,34 +42,51 @@ const Register = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (hasInitialized && isAuthenticated && !isLoading) {
       navigate('/dashboard');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, isLoading, hasInitialized]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email) {
-      // Error state would be handled here in a production app
+    if (!name || !email || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please complete all required fields",
+        variant: "destructive",
+      });
       return;
     }
     
-    setLoading(true);
+    setFormLoading(true);
     
     try {
       // Use the registerUser function from MLMContext to register the user
-      const user = await registerUser(name, email, referralCode || undefined);
+      const success = await registerUser(name, email, password, referralCode || undefined);
       
-      if (user) {
+      if (success) {
+        toast({
+          title: "Registration Successful",
+          description: "Your account has been created. You can now log in.",
+        });
         navigate('/login');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
+      toast({
+        title: "Registration Failed",
+        description: error?.message || "An error occurred during registration",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
+
+  if (!hasInitialized) {
+    return <LoadingSpinner fullScreen text="Initializing application..." />;
+  }
 
   return (
     <AppLayout>
@@ -87,62 +108,74 @@ const Register = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="John Doe"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="your.email@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  {referralCode && (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-mlm-primary mb-4" />
+                  <p className="text-sm text-muted-foreground">Checking authentication status...</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit}>
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="referralCode">Referral Code</Label>
+                      <Label htmlFor="name">Full Name</Label>
                       <Input
-                        id="referralCode"
+                        id="name"
                         type="text"
-                        value={referralCode}
-                        readOnly
-                        className="bg-muted"
+                        placeholder="John Doe"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
                       />
                     </div>
-                  )}
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-mlm-primary hover:bg-mlm-accent"
-                    disabled={loading}
-                  >
-                    {loading ? 'Registering...' : 'Register'}
-                  </Button>
-                </div>
-              </form>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="your.email@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    {referralCode && (
+                      <div className="space-y-2">
+                        <Label htmlFor="referralCode">Referral Code</Label>
+                        <Input
+                          id="referralCode"
+                          type="text"
+                          value={referralCode}
+                          readOnly
+                          className="bg-muted"
+                        />
+                      </div>
+                    )}
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-mlm-primary hover:bg-mlm-accent"
+                      disabled={formLoading}
+                    >
+                      {formLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Registering...
+                        </>
+                      ) : 'Register'}
+                    </Button>
+                  </div>
+                </form>
+              )}
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <div className="text-sm text-center text-muted-foreground">

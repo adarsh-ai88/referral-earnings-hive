@@ -13,6 +13,7 @@ interface AuthContextType {
   isAdmin: boolean;
   refreshUserProfile: () => Promise<void>;
   isLoading: boolean;
+  hasInitialized: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const { toast } = useToast();
   const isAuthenticated = !!session;
   const isAdmin = !!user?.isAdmin;
@@ -61,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       console.error('Profile fetch error:', err);
-      throw err;
+      return null;
     }
   }, []);
 
@@ -76,7 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       const userProfile = await fetchUserProfile(session.user.id);
       if (!userProfile) {
-        setUser(null);
         console.warn('User authenticated but no profile found');
       }
     } catch (error) {
@@ -90,6 +90,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   }, [fetchUserProfile, session, toast]);
+
+  // Handle user profile initialization and auto-retry for missing profile
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && !user && session?.user?.id && !hasInitialized) {
+      // Auto-retry for profile once
+      const retryFetchProfile = async () => {
+        console.log('Retrying profile fetch after short delay');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await fetchUserProfile(session.user.id);
+        setHasInitialized(true);
+      };
+      
+      retryFetchProfile();
+    }
+  }, [isLoading, isAuthenticated, user, session, fetchUserProfile, hasInitialized]);
 
   // Set up auth state listener and check for existing session
   useEffect(() => {
@@ -111,42 +126,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const userProfile = await fetchUserProfile(currentSession.user.id);
             if (!userProfile && mounted) {
-              // Try once more after a short delay (common issue with new registrations)
-              setTimeout(async () => {
-                if (mounted) {
-                  try {
-                    await fetchUserProfile(currentSession.user.id);
-                  } catch (retryErr) {
-                    console.error('Retry profile fetch failed:', retryErr);
-                  } finally {
-                    if (mounted) {
-                      setIsLoading(false);
-                      setInitialized(true);
-                    }
-                  }
-                }
-              }, 1000);
+              // Missing profile will be handled by the auto-retry useEffect
+              setIsLoading(false);
             } else if (mounted) {
               setIsLoading(false);
-              setInitialized(true);
+              setHasInitialized(true);
             }
           } catch (err) {
             console.error('Profile fetch error during auth change:', err);
             if (mounted) {
-              toast({
-                title: "Profile Loading Error",
-                description: "There was an issue loading your profile. Please try logging in again.",
-                variant: "destructive",
-              });
               setIsLoading(false);
-              setInitialized(true);
+              setHasInitialized(true);
             }
           }
         } else {
           if (mounted) {
             setUser(null);
             setIsLoading(false);
-            setInitialized(true);
+            setHasInitialized(true);
           }
         }
       }
@@ -175,13 +172,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (mounted) {
           setIsLoading(false);
-          setInitialized(true);
+          setHasInitialized(true);
         }
       } catch (error) {
         console.error('Error checking session:', error);
         if (mounted) {
           setIsLoading(false);
-          setInitialized(true);
+          setHasInitialized(true);
         }
       }
     };
@@ -270,7 +267,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated, 
         isAdmin, 
         refreshUserProfile, 
-        isLoading: isLoading || !initialized 
+        isLoading,
+        hasInitialized 
       }}
     >
       {children}

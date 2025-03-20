@@ -30,10 +30,10 @@ const queryClient = new QueryClient({
 
 // Auth route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, hasInitialized } = useAuth();
   
-  if (isLoading) {
-    return <LoadingSpinner fullScreen text="Loading authentication status..." />;
+  if (!hasInitialized || isLoading) {
+    return <LoadingSpinner fullScreen text="Verifying your session..." />;
   }
   
   if (!isAuthenticated) {
