@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -9,11 +8,14 @@ import {
   Copy, 
   Share2,
   ChevronRight,
-  Loader2
+  Loader2,
+  AlertTriangle,
+  RefreshCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import StatsCard from '@/components/mlm/StatsCard';
 import TransactionList from '@/components/mlm/TransactionList';
 import ReferralCodeCard from '@/components/mlm/ReferralCodeCard';
@@ -24,30 +26,42 @@ import CommissionLevelsTable from '@/components/mlm/CommissionLevelsTable';
 import { useToast } from '@/components/ui/use-toast';
 
 const Dashboard = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading, refreshUserProfile } = useAuth();
   const { userStats, copyReferralLink } = useMLM();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
+  const [localLoading, setLocalLoading] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
-    console.log('Dashboard auth state:', { isAuthenticated, user });
+    console.log('Dashboard auth state:', { isAuthenticated, user, isLoading, userStats });
     
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-    
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !isLoading) {
       console.log('Not authenticated, redirecting to login');
       navigate('/login');
     }
-    
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
+
+  // Handle retry for profile refresh
+  const handleRefreshProfile = async () => {
+    setLocalLoading(true);
+    try {
+      await refreshUserProfile();
+      setRetryCount(prev => prev + 1);
+      toast({
+        title: "Refresh Attempted",
+        description: "Trying to reload your profile data",
+      });
+    } catch (error) {
+      console.error('Failed to refresh profile:', error);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
 
   // Show loading state while waiting for user data
-  if (loading && !userStats) {
+  if (isLoading || localLoading) {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-8 min-h-[80vh] flex flex-col items-center justify-center">
@@ -58,20 +72,40 @@ const Dashboard = () => {
     );
   }
 
-  // If user is authenticated but data is still not available after loading timeout
-  if (!loading && (!user || !userStats)) {
+  // If user is authenticated but data is still not available
+  if (!user || !userStats) {
     return (
       <AppLayout>
         <div className="container mx-auto px-4 py-8 min-h-[80vh] flex flex-col items-center justify-center">
           <div className="text-center max-w-lg">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-4">There was an issue loading your dashboard</h2>
             <p className="text-muted-foreground mb-6">
               This could be due to network issues or problems with your account data.
             </p>
+            
+            <Alert variant="destructive" className="mb-6">
+              <AlertTitle>Error Details</AlertTitle>
+              <AlertDescription>
+                {retryCount > 0 
+                  ? `Unable to load profile data after ${retryCount} attempts. Please try logging out and back in.`
+                  : "Could not load user profile data. This may be due to database policies or network issues."}
+              </AlertDescription>
+            </Alert>
+            
             <div className="space-y-4">
+              <Button 
+                onClick={handleRefreshProfile}
+                className="w-full"
+                disabled={localLoading}
+              >
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                Retry Loading Profile
+              </Button>
               <Button 
                 onClick={() => window.location.reload()}
                 className="w-full"
+                variant="outline"
               >
                 Reload Page
               </Button>

@@ -11,6 +11,8 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  refreshUserProfile: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,13 +20,77 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const isAuthenticated = !!session;
   const isAdmin = !!user?.isAdmin;
 
+  // Function to fetch user profile data
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      console.log('Fetching user profile for:', userId);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        throw error;
+      }
+      
+      if (data) {
+        const userProfile: User = {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          referralCode: data.referral_code,
+          referredBy: data.referred_by,
+          level: data.level,
+          registeredAt: new Date(data.registered_at),
+          isAdmin: data.is_admin
+        };
+        console.log('User profile loaded:', userProfile);
+        setUser(userProfile);
+        return userProfile;
+      } else {
+        console.log('No user profile found');
+        setUser(null);
+        return null;
+      }
+    } catch (err) {
+      console.error('Profile fetch error:', err);
+      throw err;
+    }
+  };
+
+  // Function to refresh user profile data
+  const refreshUserProfile = async () => {
+    if (!session?.user?.id) {
+      console.log('Cannot refresh profile: No authenticated user');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      await fetchUserProfile(session.user.id);
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error);
+      toast({
+        title: "Profile Update Failed",
+        description: "Could not refresh your profile data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Set up auth state listener and check for existing session
   useEffect(() => {
     console.log('Setting up auth state listener');
+    setIsLoading(true);
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -35,39 +101,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           // Fetch user profile data
           try {
-            const { data, error } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            if (error) {
-              console.error('Error fetching user profile:', error);
-              return;
-            }
-            
-            if (data) {
-              const userProfile: User = {
-                id: data.id,
-                name: data.name,
-                email: data.email,
-                referralCode: data.referral_code,
-                referredBy: data.referred_by,
-                level: data.level,
-                registeredAt: new Date(data.registered_at),
-                isAdmin: data.is_admin
-              };
-              console.log('User profile loaded:', userProfile);
-              setUser(userProfile);
-            } else {
-              console.log('No user profile found');
-              setUser(null);
-            }
+            await fetchUserProfile(session.user.id);
           } catch (err) {
-            console.error('Profile fetch error:', err);
+            console.error('Profile fetch error during auth change:', err);
+            toast({
+              title: "Profile Loading Error",
+              description: "There was an issue loading your profile. Please try logging in again.",
+              variant: "destructive",
+            });
+          } finally {
+            setIsLoading(false);
           }
         } else {
           setUser(null);
+          setIsLoading(false);
         }
       }
     );
@@ -80,36 +127,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         // Fetch user profile data
         try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching user profile on init:', error);
-            return;
-          }
-          
-          if (data) {
-            const userProfile: User = {
-              id: data.id,
-              name: data.name,
-              email: data.email,
-              referralCode: data.referral_code,
-              referredBy: data.referred_by,
-              level: data.level,
-              registeredAt: new Date(data.registered_at),
-              isAdmin: data.is_admin
-            };
-            console.log('User profile loaded on init:', userProfile);
-            setUser(userProfile);
-          } else {
-            console.log('No user profile found on init');
-          }
+          await fetchUserProfile(session.user.id);
         } catch (err) {
           console.error('Profile fetch error on init:', err);
+          toast({
+            title: "Profile Loading Error",
+            description: "There was an issue loading your profile. Please try logging in again.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
         }
+      } else {
+        setIsLoading(false);
       }
     });
 
@@ -122,6 +152,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       console.log('Attempting login with:', email);
+      setIsLoading(true);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -134,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: error.message,
           variant: "destructive",
         });
+        setIsLoading(false);
         return false;
       }
       
@@ -146,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return true;
       }
       
+      setIsLoading(false);
       return false;
     } catch (error) {
       console.error('Login exception:', error);
@@ -154,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "An unexpected error occurred",
         variant: "destructive",
       });
+      setIsLoading(false);
       return false;
     }
   };
@@ -161,6 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       console.log('Logging out');
+      setIsLoading(true);
       await supabase.auth.signOut();
       toast({
         title: "Logged Out",
@@ -173,11 +209,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "An error occurred during logout",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, isAdmin }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, isAdmin, refreshUserProfile, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
