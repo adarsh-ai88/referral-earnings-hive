@@ -26,6 +26,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [adminCreating, setAdminCreating] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -60,12 +61,20 @@ const Login = () => {
       if (success) {
         navigate('/dashboard');
       }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login Failed",
+        description: "Please check your credentials and try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleAdminCreate = async () => {
+    setAdminCreating(true);
     try {
       const response = await fetch('/api/create_admin');
       const data = await response.json();
@@ -93,6 +102,8 @@ const Login = () => {
         description: "Failed to connect to the admin creation service",
         variant: "destructive",
       });
+    } finally {
+      setAdminCreating(false);
     }
   };
 
@@ -154,6 +165,21 @@ const Login = () => {
                   </Button>
                 </div>
               </form>
+              
+              <div className="mt-4 pt-2 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={handleAdminCreate}
+                  disabled={adminCreating}
+                  className="w-full text-xs"
+                  size="sm"
+                >
+                  {adminCreating ? 'Creating Admin User...' : 'Create/Update Admin User'}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  This will create or update the admin user with the default credentials
+                </p>
+              </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <div className="text-sm text-center text-muted-foreground">
