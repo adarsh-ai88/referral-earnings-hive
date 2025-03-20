@@ -41,6 +41,11 @@ const Dashboard = () => {
     return null;
   }
 
+  // Helper function to open external link
+  const openExternalLink = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-8">
@@ -60,10 +65,7 @@ const Dashboard = () => {
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
             <Button 
-              as="a"
-              href={tradingBotUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              onClick={() => openExternalLink(tradingBotUrl)}
               className="bg-mlm-accent hover:bg-mlm-primary animate-slideUp"
             >
               <LineChart className="mr-2 h-4 w-4" />
@@ -155,10 +157,7 @@ const Dashboard = () => {
                         Your Trading Bot is ready to use. Access all trading features, signals, and automated trading in your dedicated Trading Bot platform.
                       </p>
                       <Button 
-                        as="a"
-                        href={tradingBotUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        onClick={() => openExternalLink(tradingBotUrl)}
                         size="lg"
                         className="mt-4 bg-mlm-accent hover:bg-mlm-primary"
                       >
@@ -210,10 +209,7 @@ const Dashboard = () => {
                     <Button 
                       className="w-full justify-start"
                       variant="outline"
-                      as="a"
-                      href={tradingBotUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={() => openExternalLink(tradingBotUrl)}
                     >
                       <LineChart className="mr-2 h-4 w-4" />
                       Open Trading Bot
