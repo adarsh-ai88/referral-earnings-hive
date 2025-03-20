@@ -1,5 +1,5 @@
 
-import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { User } from '@/lib/types';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,19 +21,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const { toast } = useToast();
   const isAuthenticated = !!session;
   const isAdmin = !!user?.isAdmin;
 
   // Function to fetch user profile data
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string): Promise<User | null> => {
     try {
       console.log('Fetching user profile for:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no data is found
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching user profile:', error);
@@ -56,17 +57,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return userProfile;
       } else {
         console.log('No user profile found');
-        setUser(null);
         return null;
       }
     } catch (err) {
       console.error('Profile fetch error:', err);
       throw err;
     }
-  };
+  }, []);
 
   // Function to refresh user profile data
-  const refreshUserProfile = async () => {
+  const refreshUserProfile = useCallback(async () => {
     if (!session?.user?.id) {
       console.log('Cannot refresh profile: No authenticated user');
       return;
@@ -74,7 +74,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       setIsLoading(true);
-      await fetchUserProfile(session.user.id);
+      const userProfile = await fetchUserProfile(session.user.id);
+      if (!userProfile) {
+        setUser(null);
+        console.warn('User authenticated but no profile found');
+      }
     } catch (error) {
       console.error('Failed to refresh user profile:', error);
       toast({
@@ -85,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fetchUserProfile, session, toast]);
 
   // Set up auth state listener and check for existing session
   useEffect(() => {
@@ -105,20 +109,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (currentSession?.user) {
           // Fetch user profile data
           try {
-            await fetchUserProfile(currentSession.user.id);
+            const userProfile = await fetchUserProfile(currentSession.user.id);
+            if (!userProfile && mounted) {
+              // Try once more after a short delay (common issue with new registrations)
+              setTimeout(async () => {
+                if (mounted) {
+                  try {
+                    await fetchUserProfile(currentSession.user.id);
+                  } catch (retryErr) {
+                    console.error('Retry profile fetch failed:', retryErr);
+                  } finally {
+                    if (mounted) {
+                      setIsLoading(false);
+                      setInitialized(true);
+                    }
+                  }
+                }
+              }, 1000);
+            } else if (mounted) {
+              setIsLoading(false);
+              setInitialized(true);
+            }
           } catch (err) {
             console.error('Profile fetch error during auth change:', err);
-            toast({
-              title: "Profile Loading Error",
-              description: "There was an issue loading your profile. Please try logging in again.",
-              variant: "destructive",
-            });
-          } finally {
-            if (mounted) setIsLoading(false);
+            if (mounted) {
+              toast({
+                title: "Profile Loading Error",
+                description: "There was an issue loading your profile. Please try logging in again.",
+                variant: "destructive",
+              });
+              setIsLoading(false);
+              setInitialized(true);
+            }
           }
         } else {
-          setUser(null);
-          if (mounted) setIsLoading(false);
+          if (mounted) {
+            setUser(null);
+            setIsLoading(false);
+            setInitialized(true);
+          }
         }
       }
     );
@@ -126,7 +155,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // THEN check for existing session
     const getInitialSession = async () => {
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
+        const initialSession = data.session;
+        
         console.log('Checking existing session:', initialSession?.user?.id);
         
         if (!mounted) return;
@@ -141,10 +172,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error('Profile fetch error on init:', err);
           }
         }
+        
+        if (mounted) {
+          setIsLoading(false);
+          setInitialized(true);
+        }
       } catch (error) {
         console.error('Error checking session:', error);
-      } finally {
-        if (mounted) setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+          setInitialized(true);
+        }
       }
     };
 
@@ -155,7 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchUserProfile, toast]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -206,6 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('Logging out');
       setIsLoading(true);
       await supabase.auth.signOut();
+      setUser(null);
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out",
@@ -223,7 +262,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, isAdmin, refreshUserProfile, isLoading }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        login, 
+        logout, 
+        isAuthenticated, 
+        isAdmin, 
+        refreshUserProfile, 
+        isLoading: isLoading || !initialized 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
