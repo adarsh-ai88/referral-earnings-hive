@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { UserCircle, LogOut, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -69,7 +68,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 )}
               </>
             )}
-            <ThemeToggle />
             {!isAuthenticated ? (
               <div className="flex space-x-2">
                 <Button
@@ -101,7 +99,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
           {/* Mobile menu button */}
           <div className="flex items-center space-x-2 md:hidden">
-            <ThemeToggle />
             <button
               className="text-foreground"
               onClick={toggleMobileMenu}
