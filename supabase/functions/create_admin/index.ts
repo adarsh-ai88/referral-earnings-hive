@@ -30,10 +30,10 @@ serve(async (req) => {
     });
     
     const adminEmail = "admin@example.com";
-    const adminPassword = "admin@example.com";
+    const adminPassword = "password123"; // Changed to a simpler password
     const adminName = "Admin User";
 
-    // Create user with the service role client
+    // Try to create user with the service role client
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: adminEmail,
       password: adminPassword,
@@ -42,6 +42,43 @@ serve(async (req) => {
     });
 
     if (authError) {
+      // If user already exists, try to update their password
+      if (authError.message.includes("User already registered")) {
+        // Find the user
+        const { data: userData } = await supabase.auth.admin.listUsers();
+        const adminUser = userData?.users?.find(user => user.email === adminEmail);
+        
+        if (adminUser) {
+          // Update the user's password
+          const { error: updateError } = await supabase.auth.admin.updateUserById(
+            adminUser.id,
+            { password: adminPassword, email_confirm: true }
+          );
+          
+          if (updateError) {
+            throw updateError;
+          }
+          
+          // Ensure the admin flag is set properly
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ is_admin: true, name: adminName })
+            .eq('id', adminUser.id);
+            
+          if (profileError) {
+            throw profileError;
+          }
+          
+          return new Response(
+            JSON.stringify({
+              message: "Admin user password updated successfully",
+              adminEmail,
+              adminPassword
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
       throw authError;
     }
     
@@ -76,7 +113,7 @@ serve(async (req) => {
         JSON.stringify({ 
           message: "Admin user already exists", 
           adminEmail: "admin@example.com",
-          adminPassword: "admin@example.com"
+          adminPassword: "password123" // Return the simpler password
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
