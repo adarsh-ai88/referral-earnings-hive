@@ -16,7 +16,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
 import { useToast } from '@/components/ui/use-toast';
 
-// Fixed admin credentials
+// Fixed admin credentials - for developer reference only
+// Email: admin@example.com
+// Password: password123
 const ADMIN_EMAIL = "admin@example.com";
 const ADMIN_PASSWORD = "password123";
 
@@ -94,16 +96,6 @@ const Login = () => {
     }
   };
 
-  // Quick fill admin credentials without API call
-  const fillAdminCredentials = () => {
-    setEmail(ADMIN_EMAIL);
-    setPassword(ADMIN_PASSWORD);
-    toast({
-      title: "Admin Credentials Filled",
-      description: "You can now click Login to access the admin area.",
-    });
-  };
-
   return (
     <AppLayout>
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
@@ -162,19 +154,6 @@ const Login = () => {
                   </Button>
                 </div>
               </form>
-
-              <div className="mt-4 text-center">
-                <Button 
-                  variant="outline" 
-                  onClick={fillAdminCredentials}
-                  className="w-full"
-                >
-                  Use Admin Login
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Click to fill admin credentials (email: {ADMIN_EMAIL}, password: {ADMIN_PASSWORD})
-                </p>
-              </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <div className="text-sm text-center text-muted-foreground">
