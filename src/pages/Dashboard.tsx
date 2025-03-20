@@ -107,7 +107,12 @@ const Dashboard = () => {
                       <div className="mt-4 text-right">
                         <Button 
                           variant="link" 
-                          onClick={() => document.querySelector('[data-value="transactions"]')?.click()}
+                          onClick={() => {
+                            const tabElement = document.querySelector('[data-value="transactions"]');
+                            if (tabElement) {
+                              (tabElement as HTMLElement).click();
+                            }
+                          }}
                           className="text-mlm-primary hover:text-mlm-accent"
                         >
                           View all transactions
@@ -161,7 +166,12 @@ const Dashboard = () => {
                     <Button 
                       className="w-full justify-start"
                       variant="outline"
-                      onClick={() => document.querySelector('[data-value="transactions"]')?.click()}
+                      onClick={() => {
+                        const tabElement = document.querySelector('[data-value="transactions"]');
+                        if (tabElement) {
+                          (tabElement as HTMLElement).click();
+                        }
+                      }}
                     >
                       <DollarSign className="mr-2 h-4 w-4" />
                       View All Transactions
