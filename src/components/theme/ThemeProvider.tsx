@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'dark' | 'light' | 'system';
+type Theme = 'dark' | 'system';
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -39,16 +39,16 @@ export function ThemeProvider({
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
         .matches
         ? 'dark'
-        : 'light';
+        : 'dark'; // Always default to dark even for system theme
 
-      root.classList.add(systemTheme);
+      root.classList.add('dark');
       
       // Add glassmorphism class
       root.classList.add('glass-enabled');
       return;
     }
 
-    root.classList.add(theme);
+    root.classList.add('dark');
     
     // Add glassmorphism class
     root.classList.add('glass-enabled');
