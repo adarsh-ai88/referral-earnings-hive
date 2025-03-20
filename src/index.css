@@ -43,6 +43,12 @@
     --sidebar-accent-foreground: 260 10% 5%;
     --sidebar-border: 270 10% 90%;
     --sidebar-ring: 270 80% 55%;
+    
+    /* Glass morphism variables */
+    --glass-background: 0 0% 100% / 5%;
+    --glass-border: 0 0% 100% / 10%;
+    --glass-blur: 16px;
+    --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   }
 
   .dark {
@@ -82,6 +88,12 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 5.9% 10%;
     --sidebar-ring: 270 80% 55%;
+    
+    /* Glass morphism variables for dark mode */
+    --glass-background: 240 10% 10% / 20%;
+    --glass-border: 240 10% 80% / 10%;
+    --glass-blur: 16px;
+    --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -120,12 +132,33 @@
   }
 }
 
-.mlm-gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-mlm-primary to-mlm-accent;
+/* Updated glassmorphism utilities */
+.glass {
+  @apply backdrop-blur-[var(--glass-blur)] bg-[hsl(var(--glass-background))] border border-[hsl(var(--glass-border))] shadow-[var(--glass-shadow)];
 }
 
 .glass-card {
-  @apply backdrop-blur-md bg-white/10 dark:bg-black/40 border border-white/20 dark:border-white/10;
+  @apply glass rounded-lg;
+}
+
+.glass-nav {
+  @apply glass z-10;
+}
+
+.glass-sidebar {
+  @apply glass border-r border-[hsl(var(--glass-border))];
+}
+
+.glass-input {
+  @apply bg-transparent border-[hsl(var(--glass-border))] focus:border-primary/50 focus:bg-[hsl(var(--glass-background))];
+}
+
+.glass-button {
+  @apply glass hover:bg-primary/20 transition-all duration-300;
+}
+
+.mlm-gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-mlm-primary to-mlm-accent;
 }
 
 .animate-fade-in {
@@ -160,4 +193,3 @@
   opacity: 0;
   transition: opacity 300ms;
 }
-

@@ -42,10 +42,16 @@ export function ThemeProvider({
         : 'light';
 
       root.classList.add(systemTheme);
+      
+      // Add glassmorphism class
+      root.classList.add('glass-enabled');
       return;
     }
 
     root.classList.add(theme);
+    
+    // Add glassmorphism class
+    root.classList.add('glass-enabled');
   }, [theme]);
 
   const value = {
