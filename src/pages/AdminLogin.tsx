@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Admin credentials
 const ADMIN_EMAIL = "admin@example.com";
@@ -73,10 +74,16 @@ const AdminLogin = () => {
   const handleAdminCreate = async () => {
     setAdminCreating(true);
     try {
-      const response = await fetch('/api/create_admin');
-      const data = await response.json();
+      // Call the Supabase Edge Function directly
+      const { data, error } = await supabase.functions.invoke('create_admin', {
+        method: 'POST'
+      });
       
-      if (response.ok) {
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
         toast({
           title: "Admin Credentials Ready",
           description: `${data.message}. Use email: ${data.adminEmail} and password: ${data.adminPassword}`,
@@ -84,18 +91,12 @@ const AdminLogin = () => {
         
         // Fill in the password field
         setPassword(data.adminPassword);
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to create admin user",
-          variant: "destructive",
-        });
       }
     } catch (error) {
       console.error('Admin creation error:', error);
       toast({
         title: "Error",
-        description: "Failed to connect to the admin creation service",
+        description: "Failed to create admin user. Please try again.",
         variant: "destructive",
       });
     } finally {
