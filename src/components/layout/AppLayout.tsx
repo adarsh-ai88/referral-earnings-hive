@@ -78,6 +78,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   Login
                 </Button>
                 <Button
+                  variant="outline"
+                  onClick={() => navigate('/admin-login')}
+                  className="bg-transparent hover:bg-mlm-primary/10"
+                >
+                  Admin
+                </Button>
+                <Button
                   onClick={() => navigate('/register')}
                   className="bg-mlm-primary hover:bg-mlm-accent text-white"
                 >
@@ -162,6 +169,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     className="w-full"
                   >
                     Login
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      navigate('/admin-login');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full"
+                  >
+                    Admin Login
                   </Button>
                   <Button
                     onClick={() => {

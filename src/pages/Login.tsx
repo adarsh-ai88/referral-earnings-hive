@@ -16,50 +16,38 @@ import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
 import { useToast } from '@/components/ui/use-toast';
 
-// Fixed admin credentials - for developer reference only
-// Email: admin@example.com
-// Password: password123
-const ADMIN_EMAIL = "admin@example.com";
-const ADMIN_PASSWORD = "password123";
-
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [adminCreating, setAdminCreating] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isAdmin, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      // Check if the credentials match the admin credentials
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        const success = await login(email, password);
-        if (success) {
-          toast({
-            title: "Admin Login Successful",
-            description: "Welcome back, Admin!",
-          });
-          navigate('/admin'); // Redirect directly to admin page
-          return;
-        }
-      }
-      
       // Regular login flow
       const success = await login(email, password);
       if (success) {
-        navigate('/dashboard');
+        // The useEffect will handle redirects based on user role
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -70,40 +58,6 @@ const Login = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAdminCreate = async () => {
-    setAdminCreating(true);
-    try {
-      const response = await fetch('/api/create_admin');
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast({
-          title: "Admin Credentials Ready",
-          description: `${data.message}. Use email: ${data.adminEmail} and password: ${data.adminPassword}`,
-        });
-        
-        // Fill in the fields
-        setEmail(data.adminEmail);
-        setPassword(data.adminPassword);
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to create admin user",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Admin creation error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to connect to the admin creation service",
-        variant: "destructive",
-      });
-    } finally {
-      setAdminCreating(false);
     }
   };
 
@@ -165,21 +119,6 @@ const Login = () => {
                   </Button>
                 </div>
               </form>
-              
-              <div className="mt-4 pt-2 border-t border-border">
-                <Button
-                  variant="outline"
-                  onClick={handleAdminCreate}
-                  disabled={adminCreating}
-                  className="w-full text-xs"
-                  size="sm"
-                >
-                  {adminCreating ? 'Creating Admin User...' : 'Create/Update Admin User'}
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  This will create or update the admin user with the default credentials
-                </p>
-              </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <div className="text-sm text-center text-muted-foreground">
@@ -190,6 +129,15 @@ const Login = () => {
                 >
                   Create one
                 </Link>
+              </div>
+              <div className="w-full text-center">
+                <Button 
+                  variant="link" 
+                  onClick={() => navigate('/admin-login')}
+                  className="text-mlm-primary hover:text-mlm-accent"
+                >
+                  Admin Login
+                </Button>
               </div>
             </CardFooter>
           </Card>
