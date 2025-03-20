@@ -8,7 +8,8 @@ import {
   TrendingUp, 
   Copy, 
   Share2,
-  ChevronRight
+  ChevronRight,
+  LineChart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,9 @@ const Dashboard = () => {
   const { userStats, copyReferralLink } = useMLM();
   const navigate = useNavigate();
 
+  // External Trading Bot URL - replace with your actual Bolt.new app URL
+  const tradingBotUrl = "https://your-bolt-app-url.com";
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
@@ -40,20 +44,32 @@ const Dashboard = () => {
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold animate-slideUp">Dashboard</h1>
+            <h1 className="text-3xl font-bold animate-slideUp">MLM Dashboard</h1>
             <p className="text-muted-foreground animate-slideUp">
               Welcome back, {user.name}
             </p>
           </div>
-          <Button 
-            onClick={() => navigate('/referrals')}
-            className="mt-4 md:mt-0 bg-mlm-primary hover:bg-mlm-accent animate-slideUp"
-          >
-            View My Referral Network
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
+            <Button 
+              onClick={() => navigate('/referrals')}
+              className="bg-mlm-primary hover:bg-mlm-accent animate-slideUp"
+            >
+              View My Referral Network
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button 
+              as="a"
+              href={tradingBotUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-mlm-accent hover:bg-mlm-primary animate-slideUp"
+            >
+              <LineChart className="mr-2 h-4 w-4" />
+              Open Trading Bot
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -124,16 +140,31 @@ const Dashboard = () => {
                 </Card>
 
                 <Card className="backdrop-blur-md animate-fadeIn">
-                  <CardHeader>
-                    <CardTitle>Performance Overview</CardTitle>
-                    <CardDescription>
-                      Your referral network growth and earnings
-                    </CardDescription>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>Trading Bot Access</CardTitle>
+                      <CardDescription>
+                        Start trading with your premium trading bot
+                      </CardDescription>
+                    </div>
                   </CardHeader>
-                  <CardContent className="flex justify-center">
-                    <div className="text-center py-6 text-muted-foreground">
-                      <TrendingUp className="mx-auto h-16 w-16 mb-4 text-mlm-primary opacity-60" />
-                      <p>Performance metrics and charts will appear here as your network grows.</p>
+                  <CardContent>
+                    <div className="flex flex-col items-center space-y-4 py-6">
+                      <LineChart className="h-16 w-16 text-mlm-primary mb-2" />
+                      <p className="text-center max-w-md">
+                        Your Trading Bot is ready to use. Access all trading features, signals, and automated trading in your dedicated Trading Bot platform.
+                      </p>
+                      <Button 
+                        as="a"
+                        href={tradingBotUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="lg"
+                        className="mt-4 bg-mlm-accent hover:bg-mlm-primary"
+                      >
+                        <LineChart className="mr-2 h-5 w-5" />
+                        Launch Trading Bot
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -175,6 +206,17 @@ const Dashboard = () => {
                     >
                       <DollarSign className="mr-2 h-4 w-4" />
                       View All Transactions
+                    </Button>
+                    <Button 
+                      className="w-full justify-start"
+                      variant="outline"
+                      as="a"
+                      href={tradingBotUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <LineChart className="mr-2 h-4 w-4" />
+                      Open Trading Bot
                     </Button>
                   </CardContent>
                 </Card>
