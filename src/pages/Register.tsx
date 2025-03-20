@@ -62,8 +62,9 @@ const Register = () => {
     setFormLoading(true);
     
     try {
-      // Use the registerUser function from MLMContext to register the user
-      const success = await registerUser(name, email, password, referralCode || undefined);
+      // Fix: Pass only the expected arguments to registerUser
+      // The error was caused by passing 4 arguments when the function only expects 2-3
+      const success = await registerUser(name, email, referralCode || undefined);
       
       if (success) {
         toast({
