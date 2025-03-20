@@ -107,6 +107,7 @@ const Register = () => {
     }
   };
 
+  // Show a clear loading state when initializing
   if (!hasInitialized) {
     return <LoadingSpinner fullScreen text="Initializing application..." />;
   }

@@ -91,21 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchUserProfile, session, toast]);
 
-  // Handle user profile initialization and auto-retry for missing profile
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && !user && session?.user?.id && !hasInitialized) {
-      // Auto-retry for profile once
-      const retryFetchProfile = async () => {
-        console.log('Retrying profile fetch after short delay');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await fetchUserProfile(session.user.id);
-        setHasInitialized(true);
-      };
-      
-      retryFetchProfile();
-    }
-  }, [isLoading, isAuthenticated, user, session, fetchUserProfile, hasInitialized]);
-
   // Set up auth state listener and check for existing session
   useEffect(() => {
     let mounted = true;
@@ -125,11 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Fetch user profile data
           try {
             const userProfile = await fetchUserProfile(currentSession.user.id);
-            if (!userProfile && mounted) {
-              // Missing profile will be handled by the auto-retry useEffect
+            if (mounted) {
               setIsLoading(false);
-            } else if (mounted) {
-              setIsLoading(false);
+              // Even if we don't find a profile, we mark as initialized since the auth part is done
               setHasInitialized(true);
             }
           } catch (err) {
@@ -190,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile, toast]);
+  }, [fetchUserProfile]);
 
   const login = async (email: string, password: string) => {
     try {
