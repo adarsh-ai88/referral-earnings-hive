@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   DollarSign, 
@@ -8,7 +8,8 @@ import {
   TrendingUp, 
   Copy, 
   Share2,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,21 +21,72 @@ import AppLayout from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMLM } from '@/contexts/MLMContext';
 import CommissionLevelsTable from '@/components/mlm/CommissionLevelsTable';
+import { useToast } from '@/components/ui/use-toast';
 
 const Dashboard = () => {
   const { isAuthenticated, user } = useAuth();
   const { userStats, copyReferralLink } = useMLM();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
 
   // Redirect if not authenticated
   useEffect(() => {
+    console.log('Dashboard auth state:', { isAuthenticated, user });
+    
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+    
     if (!isAuthenticated) {
+      console.log('Not authenticated, redirecting to login');
       navigate('/login');
     }
+    
+    return () => clearTimeout(timer);
   }, [isAuthenticated, navigate]);
 
-  if (!isAuthenticated || !user || !userStats) {
-    return null;
+  // Show loading state while waiting for user data
+  if (loading && !userStats) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto px-4 py-8 min-h-[80vh] flex flex-col items-center justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-mlm-primary mb-4" />
+          <p className="text-lg text-muted-foreground">Loading your dashboard...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // If user is authenticated but data is still not available after loading timeout
+  if (!loading && (!user || !userStats)) {
+    return (
+      <AppLayout>
+        <div className="container mx-auto px-4 py-8 min-h-[80vh] flex flex-col items-center justify-center">
+          <div className="text-center max-w-lg">
+            <h2 className="text-2xl font-bold mb-4">There was an issue loading your dashboard</h2>
+            <p className="text-muted-foreground mb-6">
+              This could be due to network issues or problems with your account data.
+            </p>
+            <div className="space-y-4">
+              <Button 
+                onClick={() => window.location.reload()}
+                className="w-full"
+              >
+                Reload Page
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/login')}
+                className="w-full"
+              >
+                Back to Login
+              </Button>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
   }
 
   // Helper function to safely handle tab clicks
