@@ -16,6 +16,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
 import { useToast } from '@/components/ui/use-toast';
 
+// Fixed admin credentials
+const ADMIN_EMAIL = "admin@example.com";
+const ADMIN_PASSWORD = "password123";
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,6 +40,20 @@ const Login = () => {
     setLoading(true);
     
     try {
+      // Check if the credentials match the admin credentials
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        const success = await login(email, password);
+        if (success) {
+          toast({
+            title: "Admin Login Successful",
+            description: "Welcome back, Admin!",
+          });
+          navigate('/admin'); // Redirect directly to admin page
+          return;
+        }
+      }
+      
+      // Regular login flow
       const success = await login(email, password);
       if (success) {
         navigate('/dashboard');
@@ -52,7 +70,7 @@ const Login = () => {
       
       if (response.ok) {
         toast({
-          title: "Admin Created/Updated",
+          title: "Admin Credentials Ready",
           description: `${data.message}. Use email: ${data.adminEmail} and password: ${data.adminPassword}`,
         });
         
@@ -74,6 +92,16 @@ const Login = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Quick fill admin credentials without API call
+  const fillAdminCredentials = () => {
+    setEmail(ADMIN_EMAIL);
+    setPassword(ADMIN_PASSWORD);
+    toast({
+      title: "Admin Credentials Filled",
+      description: "You can now click Login to access the admin area.",
+    });
   };
 
   return (
@@ -138,13 +166,13 @@ const Login = () => {
               <div className="mt-4 text-center">
                 <Button 
                   variant="outline" 
-                  onClick={handleAdminCreate}
-                  className="w-full mt-2"
+                  onClick={fillAdminCredentials}
+                  className="w-full"
                 >
-                  Create/Update Admin User
+                  Use Admin Login
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Click the button above to create an admin user and get login details
+                  Click to fill admin credentials (email: {ADMIN_EMAIL}, password: {ADMIN_PASSWORD})
                 </p>
               </div>
             </CardContent>
