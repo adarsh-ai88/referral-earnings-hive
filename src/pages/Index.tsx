@@ -18,13 +18,13 @@ const Index = () => {
         <div className="container mx-auto">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-block px-3 py-1 rounded-full bg-mlm-primary/10 text-mlm-primary text-sm font-medium mb-8 animate-pulse">
-              Revolutionary Trading Bot + MLM System
+              Revolutionary Trading Algorithm + MLM System
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-slideUp">
               Earn While You <span className="text-mlm-primary">Trade</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-10 animate-slideUp">
-              Our state-of-the-art trading bot helps you maximize profits. Refer others and earn commissions through our 10-level MLM system.
+              Our state-of-the-art trading algorithm helps you maximize profits. Refer others and earn commissions through our 10-level MLM system.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slideUp">
               <Button 
@@ -61,9 +61,9 @@ const Index = () => {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-mlm-primary/10 text-mlm-primary mb-4">
                 <ShieldCheck className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Trading Bot</h3>
+              <h3 className="text-xl font-semibold mb-3">Trading Algorithm</h3>
               <p className="text-muted-foreground">
-                Purchase our state-of-the-art trading bot for ${PRODUCT_PRICE} and gain access to profitable automated trading strategies.
+                Purchase our state-of-the-art trading algorithm for ${PRODUCT_PRICE} and gain access to profitable automated trading strategies.
               </p>
             </div>
 
@@ -73,7 +73,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold mb-3">Refer Others</h3>
               <p className="text-muted-foreground">
-                Share your unique referral code with others. When they purchase the trading bot using your code, you earn commissions.
+                Share your unique referral code with others. When they purchase the trading algorithm using your code, you earn commissions.
               </p>
             </div>
 
@@ -118,7 +118,7 @@ const Index = () => {
             </div>
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Earning?</h2>
             <p className="text-xl text-muted-foreground mb-10">
-              Join our community today and start earning with our MLM trading bot system.
+              Join our community today and start earning with our MLM trading algorithm system.
             </p>
             <Button 
               className="bg-mlm-primary hover:bg-mlm-accent text-white text-lg px-8 py-6 h-auto"

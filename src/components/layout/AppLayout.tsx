@@ -45,7 +45,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       )}>
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="text-2xl font-bold text-mlm-primary">
-            TradingMLM
+            CodexAlgo.ai
           </Link>
 
           {/* Desktop Navigation */}
@@ -208,7 +208,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
               <p className="text-sm text-muted-foreground">
-                © 2023 TradingMLM. All rights reserved.
+                © 2023 CodexAlgo.ai. All rights reserved.
               </p>
             </div>
             <div className="flex space-x-6">
