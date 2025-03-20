@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { UserCircle, LogOut, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -37,11 +38,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-mlm-black flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-background to-background dark:from-background dark:to-mlm-black flex flex-col">
       {/* Header */}
       <header className={cn(
         "fixed w-full z-50 transition-all duration-300 backdrop-blur-md",
-        scrolled ? "bg-background/80 border-b shadow-sm" : "bg-transparent"
+        scrolled ? "bg-background/80 dark:bg-background/80 border-b shadow-sm" : "bg-transparent"
       )}>
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="text-2xl font-bold text-mlm-primary">
@@ -68,6 +69,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 )}
               </>
             )}
+            <ThemeToggle />
             {!isAuthenticated ? (
               <div className="flex space-x-2">
                 <Button
@@ -98,22 +100,25 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </nav>
 
           {/* Mobile menu button */}
-          <button
-            className="md:hidden text-foreground"
-            onClick={toggleMobileMenu}
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
+          <div className="flex items-center space-x-2 md:hidden">
+            <ThemeToggle />
+            <button
+              className="text-foreground"
+              onClick={toggleMobileMenu}
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 px-4 bg-background/95 backdrop-blur-lg border-b animate-slideUp">
+          <div className="md:hidden py-4 px-4 bg-background/95 dark:bg-background/95 backdrop-blur-lg border-b animate-slideUp">
             <nav className="flex flex-col space-y-4">
               <Link
                 to="/"

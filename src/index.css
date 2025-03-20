@@ -46,13 +46,13 @@
   }
 
   .dark {
-    --background: 260 10% 5%;
+    --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
 
-    --card: 260 10% 7%;
+    --card: 240 10% 7%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 260 10% 5%;
+    --popover: 240 10% 5%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 270 80% 55%;
@@ -74,7 +74,7 @@
     --input: 240 5.9% 10%;
     --ring: 270 80% 55%;
     
-    --sidebar-background: 260 10% 7%;
+    --sidebar-background: 240 10% 5.9%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 270 80% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -125,7 +125,7 @@
 }
 
 .glass-card {
-  @apply backdrop-blur-md bg-white/10 border border-white/20;
+  @apply backdrop-blur-md bg-white/10 dark:bg-black/40 border border-white/20 dark:border-white/10;
 }
 
 .animate-fade-in {
@@ -160,3 +160,4 @@
   opacity: 0;
   transition: opacity 300ms;
 }
+
