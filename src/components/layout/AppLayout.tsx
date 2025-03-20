@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { UserCircle, LogOut, Menu, X, LineChart } from 'lucide-react';
+import { UserCircle, LogOut, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -36,9 +36,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  // External Trading Bot URL - replace with your actual Bolt.new app URL
-  const tradingBotUrl = "https://your-bolt-app-url.com";
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-mlm-black flex flex-col">
       {/* Header */}
@@ -59,17 +56,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {isAuthenticated && (
               <>
                 <Link to="/dashboard" className="hover:text-mlm-primary transition-colors">
-                  MLM Dashboard
+                  Dashboard
                 </Link>
-                <a 
-                  href={tradingBotUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="hover:text-mlm-primary transition-colors flex items-center"
-                >
-                  <LineChart className="mr-1 h-4 w-4" />
-                  Trading Bot
-                </a>
                 <Link to="/referrals" className="hover:text-mlm-primary transition-colors">
                   Referrals
                 </Link>
@@ -141,18 +129,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     className="py-2 px-4 hover:bg-mlm-primary/10 rounded-md"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    MLM Dashboard
+                    Dashboard
                   </Link>
-                  <a 
-                    href={tradingBotUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="py-2 px-4 hover:bg-mlm-primary/10 rounded-md flex items-center"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <LineChart className="mr-2 h-4 w-4" />
-                    Trading Bot
-                  </a>
                   <Link
                     to="/referrals"
                     className="py-2 px-4 hover:bg-mlm-primary/10 rounded-md"

@@ -16,7 +16,7 @@ import { useMLM } from '@/contexts/MLMContext';
 import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, LineChart, Users } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -69,23 +69,10 @@ const Register = () => {
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl text-center">Create an Account</CardTitle>
               <CardDescription className="text-center">
-                Register to access the Trading Bot and MLM System
+                Register to start trading and earning commissions
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="mb-6 grid grid-cols-2 gap-4 text-center">
-                <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-background/50">
-                  <LineChart className="h-8 w-8 mb-2 text-mlm-primary" />
-                  <h3 className="font-medium">Trading Bot</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Advanced trading signals</p>
-                </div>
-                <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-background/50">
-                  <Users className="h-8 w-8 mb-2 text-mlm-accent" />
-                  <h3 className="font-medium">MLM System</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Earn commission on referrals</p>
-                </div>
-              </div>
-
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4">
                   <div className="space-y-2">
