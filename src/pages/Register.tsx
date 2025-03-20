@@ -18,6 +18,7 @@ import { useMLM } from '@/contexts/MLMContext';
 import AppLayout from '@/components/layout/AppLayout';
 import { useToast } from '@/components/ui/use-toast';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -62,16 +63,37 @@ const Register = () => {
     setFormLoading(true);
     
     try {
-      // Fix: Pass only the expected arguments to registerUser
-      // The error was caused by passing 4 arguments when the function only expects 2-3
-      const success = await registerUser(name, email, referralCode || undefined);
+      // First register the user with Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            referredBy: referralCode ? true : false
+          }
+        }
+      });
       
-      if (success) {
+      if (authError) {
+        throw authError;
+      }
+      
+      if (!authData.user) {
+        throw new Error("Failed to create user account");
+      }
+      
+      // Then use MLM context to register the user in the MLM system
+      const user = await registerUser(name, email, referralCode || undefined);
+      
+      if (user) {
         toast({
           title: "Registration Successful",
           description: "Your account has been created. You can now log in.",
         });
         navigate('/login');
+      } else {
+        throw new Error("Failed to register in MLM system");
       }
     } catch (error: any) {
       console.error('Registration error:', error);
